@@ -11,7 +11,8 @@ PRODUCE_TAR=n
 PRODUCE_ZIP=y
 TARGET="cwm"
 THREADS=$(expr 1 + $(grep processor /proc/cpuinfo | wc -l))
-VERSION=$(date '+%Y-%m-%d-%H.%M.%S')
+#VERSION=$(date '+%Y-%m-%d-%H.%M.%S')
+VERSION="5.0.2.7-epic4g"
 PROJECT_NAME=SPH-D700
 HW_BOARD_REV="03"
 TARGET_LOCALE="vzw"
@@ -105,8 +106,12 @@ done
 popd
 
 if [ "$PRODUCE_TAR" = y ] ; then
-	echo "Generating $TARGET-$VERSION.tar for flashing with Odin" && echo ""
-	tar c -C $KERNEL_BUILD_DIR/arch/arm/boot zImage >"$TARGET-$VERSION.tar"
+	echo "Generating $TARGET-$VERSION.tar.md5 for flashing with Odin" && echo ""
+	cp $KERNEL_BUILD_DIR/arch/arm/boot/zImage $KERNEL_BUILD_DIR/arch/arm/boot/recovery.bin
+	tar -H ustar -c -C $KERNEL_BUILD_DIR/arch/arm/boot recovery.bin >"$TARGET-$VERSION.tar"
+	md5sum -t $TARGET-$VERSION.tar >> $TARGET-$VERSION.tar
+	mv $TARGET-$VERSION.tar $TARGET-$VERSION.tar.md5
+	rm $KERNEL_BUILD_DIR/arch/arm/boot/recovery.bin
 fi
 
 if [ "$PRODUCE_ZIP" = y ] ; then
