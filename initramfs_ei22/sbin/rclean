@@ -1,0 +1,61 @@
+#!/system/bin/sh
+# Epic Root Uninstaller by DRockstar
+# Modified for Clean Kernel script
+# assumes alternate busybox install in path
+
+PATH=/sbin:/bin:/system/bin:/system/xbin:/data/local/tmp
+
+busybox mount -o remount,rw /
+busybox mount -o remount,rw /system
+
+for wdir in /system/bin /system/xbin; do
+  find $wdir -type l | while read line; do
+    btest=`busybox readlink $line`
+    if busybox test "`echo $btest | busybox grep busybox`" != "" -o "`echo $btest | busybox grep recovery`" != ""; then
+      rm $line
+      if busybox test -e $btest -a "$btest" != "/sbin/busybox"; then
+        rm $btest
+      fi
+    fi
+  done
+done
+
+# List of all known files used for root
+cleanlist="
+/data/app/Superuser.apk
+/data/dalvik-cache/system@app@Superuser.apk@classes.dex
+/data/local/root.sh
+/data/local/tmp/root.sh
+/data/local/tmp/rageagainstthecage-arm5.bin
+/etc/group
+/etc/passwd
+/etc/resolv.conf
+/system/app/Superuser.apk
+/system/bin/busybox
+/system/bin/jk-su
+/system/bin/joeykrim-root.sh
+/system/bin/playlogo-orig
+/system/bin/remount
+/system/bin/resolv.conf
+/system/bin/su
+/system/etc/group
+/system/etc/passwd
+/system/etc/resolv.conf
+/system/xbin/busybox
+/system/xbin/remount
+/system/xbin/su
+/system/xbin/keytimer
+/data/local/timer_delay
+/system/bin/recoveryres
+/system/bin/recoveryfiles
+"
+
+# Remove all root files, as listed in cleanlist variable
+for line in $cleanlist; do
+  busybox rm -rf $line
+done
+
+sleep 3
+
+busybox mount -o remount,ro /
+busybox mount -o remount,ro /system
