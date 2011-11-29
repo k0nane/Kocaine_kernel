@@ -1,152 +1,128 @@
-#!/bin/bash
+#/bin/bash
 
-echo "$1 $2 $3"
+# This was modified from the EpicCM/nullghost repos build scripts by DRockstar.
+# by default, the kernel build will use ${TARGET}_defconfig, in this case, Clean.Kernel_defconfig
 
-case "$1" in
-	Clean)
-		echo "************************************************************"
-		echo "* Clean Kernel                                             *"
-		echo "************************************************************"
-		pushd Kernel
-			make clean V=1 ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX 2>&1 | tee make.clean.out
-		popd
-		echo " Clean is done... "
-		exit
-		;;
-	mrproper)
-		echo "************************************************************"
-		echo "* mrproper Kernel                                          *"
-		echo "************************************************************"
-		pushd Kernel
-			make clean V=1 ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX 2>&1 | tee make.clean.out
-			make mrproper 2>&1 | tee make.mrproper.out
-		popd
-		echo " mrproper is done... "
-		exit
-		;;
-	distclean)
-		echo "************************************************************"
-		echo "* distclean Kernel                                         *"
-		echo "************************************************************"
-		pushd Kernel
-			make clean V=1 ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX 2>&1 | tee make.clean.out
-			make distclean 2>&1 | tee make.distclean.out
-		popd
-		echo " distclean is done... "
-		exit
-		;;
-	*)
-		PROJECT_NAME=SPH-D700
-		HW_BOARD_REV="03"
-		;;
-esac
-
-if [ "$CPU_JOB_NUM" = "" ] ; then
-	CPU_JOB_NUM=4
-fi
-
+BUILD_KERNEL=y
+CLEAN=n
+MKZIP='7z -mx9 -mmt=1 a "$OUTFILE" .'
+DEFCONFIG=y
+PRODUCE_TAR=n
+PRODUCE_ZIP=y
+TARGET="Clean.Kernel"
+THREADS=$(expr 1 + $(grep processor /proc/cpuinfo | wc -l))
+VERSION=$(date '+%Y-%m-%d-%H.%M.%S')
+TVER=$TARGET.EI22.tar
+PROJECT_NAME=SPH-D700
+HW_BOARD_REV="03"
 TARGET_LOCALE="vzw"
-
-#uncomment to add custom version string
-#export KBUILD_BUILD_VERSION="nubernel-EC05_v0.0.0"
-DEFCONFIG_STRING=victory_8G_defconfig
-
-#TOOLCHAIN=`pwd`/toolchains/android-toolchain-4.4.3/bin
-#TOOLCHAIN_PREFIX=arm-linux-androideabi-
-TOOLCHAIN=/usr/local/toolchain/arm-2009q3/bin
+TOOLCHAIN=`pwd`/../arm-2009q3/bin
 TOOLCHAIN_PREFIX=arm-none-linux-gnueabi-
-
+CROSS_COMPILE="$TOOLCHAIN/$TOOLCHAIN_PREFIX"
 KERNEL_BUILD_DIR=`pwd`/Kernel
 ANDROID_OUT_DIR=`pwd`/Android/out/target/product/SPH-D700
 
 export PRJROOT=$PWD
 export PROJECT_NAME
 export HW_BOARD_REV
-
 export LD_LIBRARY_PATH=.:${TOOLCHAIN}/../lib
 
+SHOW_HELP()
+{
+	echo
+	echo "Usage options for build_kernel.sh:"
+	echo "-c : Run 'make clean'"
+	echo "-d : Use specified config."
+	echo "     For example, use -d myconfig to 'make myconfig_defconfig'"
+	echo "-h : Print this help."
+	echo "-j : Use a specified number of threads to build. (Autodetects by default.)"
+	echo "     For example, use -j4 to make with 4 threads."
+	echo "-t : Produce tar file suitable for flashing with Odin."
+	echo "-z : Produce zip file suitable for flashing via Recovery."
+	echo
+	exit 1
+}
+
+# Get values from Args
+set -- $(getopt cd:hj:tz "$@")
+while [ $# -gt 0 ]
+do
+	case "$1" in
+	(-c) CLEAN=y;;
+	(-d) DEFCONFIG=y; TARGET="$2"; shift;;
+	(-h) SHOW_HELP;;
+	(-j) THREADS=$2; shift;;
+	(-t) PRODUCE_TAR=y;;
+	(-z) PRODUCE_ZIP=y;;
+	(--) shift; break;;
+	(-*) echo "$0: error - unrecognized option $1" 1>&2; exit 1;;
+	(*) break;;
+	esac
+	shift
+done
+
 echo "************************************************************"
-echo "* EXPORT VARIABLE                                          *"
+echo "* EXPORT VARIABLE		                            	 *"
 echo "************************************************************"
 echo "PRJROOT=$PRJROOT"
 echo "PROJECT_NAME=$PROJECT_NAME"
 echo "HW_BOARD_REV=$HW_BOARD_REV"
-echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 echo "************************************************************"
+echo "make clean    == "$CLEAN
+echo "use defconfig == "$DEFCONFIG
+echo "build target  == "$TARGET
+echo "make threads  == "$THREADS
+echo "build kernel  == "$BUILD_KERNEL
+echo "create tar    == "$PRODUCE_TAR
+echo "create zip    == "$PRODUCE_ZIP
+echo
 
-BUILD_MODULE()
-{
-	echo "************************************************************"
-	echo "* BUILD_MODULE                                             *"
-	echo "************************************************************"
-	echo
-	pushd Kernel
-		make ARCH=arm modules
-	popd
-}
+pushd $KERNEL_BUILD_DIR
+export KDIR=`pwd`
 
-CLEAN_ZIMAGE()
-{
-	echo "************************************************************"
-	echo "* Removing old zImage                                      *"
-	echo "************************************************************"
-	rm -f `pwd`/Kernel/arch/arm/boot/zImage
-	echo "* zImage removed"
-	echo "************************************************************"
-	echo
-}
-
-BUILD_KERNEL()
-{
-	echo "************************************************************"
-	echo "* BUILD_KERNEL                                             *"
-	echo "************************************************************"
-	echo
-	pushd $KERNEL_BUILD_DIR
-		export KDIR=`pwd`
-		make ARCH=arm $DEFCONFIG_STRING
-#		make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX
-		make V=1 -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX 2>&1 | tee make.out
-	popd
-}
-
-# print title
-PRINT_USAGE()
-{
-	echo "************************************************************"
-	echo "* PLEASE TRY AGAIN                                         *"
-	echo "************************************************************"
-	echo
-}
-
-PRINT_TITLE()
-{
-	echo
-	echo "************************************************************"
-	echo "* MAKE PACKAGES                                            *"
-	echo "************************************************************"
-	echo "* 1. kernel : zImage"
-	echo "* 2. modules"
-	echo "************************************************************"
-}
-
-##############################################################
-#                   MAIN FUNCTION                            #
-##############################################################
-if [ $# -gt 3 ]
-then
-	echo
-	echo "************************************************************"
-	echo "* Option Error                                             *"
-	PRINT_USAGE
-	exit 1
+if [ "$CLEAN" = "y" ] ; then
+	echo "Cleaning source directory." && echo ""
+	make -j"$THREADS" ARCH=arm clean
 fi
 
-START_TIME=`date +%s`
-PRINT_TITLE
-#BUILD_MODULE
-CLEAN_ZIMAGE
-BUILD_KERNEL
-END_TIME=`date +%s`
-let "ELAPSED_TIME=$END_TIME-$START_TIME"
-echo "Total compile time is $ELAPSED_TIME seconds"
+if [ "$DEFCONFIG" = "y" -o ! -f ".config" ] ; then
+	echo "Using default configuration for $TARGET" && echo ""
+	make -j"$THREADS" ARCH=arm ${TARGET}_defconfig
+fi
+
+if [ "$BUILD_KERNEL" = "y" ] ; then
+	T1=$(date +%s)
+	echo "Beginning zImage compilation..." && echo ""
+	make -j"$THREADS" ARCH=arm CROSS_COMPILE="$CROSS_COMPILE"
+	T2=$(date +%s)
+	echo "" && echo "Compilation took $(($T2 - $T1)) seconds." && echo ""
+fi
+
+echo "Cleaning initramfs files..."; echo
+for file in cpio o cpio.lzma lzma.o cpio.gz gz.o cpio.bz2 bz2.o; do
+	rm -f usr/initramfs_data.$file
+done
+
+popd
+
+if [ "$PRODUCE_TAR" = y ] ; then
+	echo "Generating $TVER.md5 for flashing with Odin" && echo ""
+	tar -H ustar -c -C $KERNEL_BUILD_DIR/arch/arm/boot zImage >"$TVER"
+	md5sum -t $TVER >> $TVER
+	mv $TVER $TVER.md5
+fi
+
+if [ "$PRODUCE_ZIP" = y ] ; then
+	echo "Generating $TARGET-$VERSION.zip for flashing as update.zip" && echo ""
+	rm -fr "$TARGET-$VERSION.zip"
+	rm -f update/kernel/zImage
+	cp $KERNEL_BUILD_DIR/arch/arm/boot/zImage update/kernel
+	OUTFILE="$PWD/$TARGET-$VERSION.zip"
+	pushd update
+	eval "$MKZIP" >/dev/null 2>&1
+	popd
+	rm -f update/kernel/zImage
+fi
+
+echo "All done!"
+
