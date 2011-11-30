@@ -1,0 +1,7 @@
+#!/bin/sh
+
+BUSYBOX="/sbin/busybox"
+SH="$BUSYBOX sh"
+
+$SH /sbin/rootcleaner
+$SH /sbin/userscript.sh

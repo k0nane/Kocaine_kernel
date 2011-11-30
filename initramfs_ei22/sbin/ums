@@ -1,0 +1,12 @@
+#!/bin/sh
+# ums script by DRockstar for SDX developers
+# initially written for Clean Kernel EI22 gingerbread
+
+sdcard="/dev/block/mmcblk0p1"
+lunfile="/sys/devices/platform/usb_mass_storage/lun0/file"
+
+echo "ums -- command to mount sdcard to USB Mass Storage"
+echo $sdcard > $lunfile
+echo "sdcard is mounted as USB Mass Storage.\n"
+echo "Please safely remove your sdcard from the PC"
+echo "before unplugging your USB cable.";;

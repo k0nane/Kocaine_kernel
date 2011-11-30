@@ -1,6 +1,6 @@
 ui_print("");ui_print("");ui_print("");ui_print("");
 ui_print("================================================");
-ui_print("DRockstar Clean Kernel EI22 Beta 2");
+ui_print("DRockstar Clean Kernel EI22 RC1");
 ui_print("Rooted Dual FS Kernel for the Epic 4G");
 # ui_print("Voodoo Color Edition");
 ui_print("================================================");

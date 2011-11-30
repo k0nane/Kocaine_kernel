@@ -1,20 +1,38 @@
-#!/system/bin/sh
+#!/sbin/sh
 # Epic Root Uninstaller by DRockstar
 # Modified for Clean Kernel script
 # assumes alternate busybox install in path
 
 PATH=/sbin:/bin:/system/bin:/system/xbin:/data/local/tmp
 
-busybox mount -o remount,rw /
-busybox mount -o remount,rw /system
+# busybox command variables
+BUSYBOX="/sbin/busybox"
+
+AWK="$BUSYBOX awk"
+CHMOD="$BUSYBOX chmod"
+CHOWN="$BUSYBOX chown"
+CP="$BUSYBOX cp"
+DF="$BUSYBOX df"
+ECHO="$BUSYBOX echo"
+FIND="$BUSYBOX find"
+GREP="$BUSYBOX grep"
+LN="$BUSYBOX ln"
+MOUNT="$BUSYBOX mount"
+READLINK="$BUSYBOX readlink"
+RM="$BUSYBOX rm"
+SLEEP="$BUSYBOX sleep"
+TEST="$BUSYBOX test"
+
+$MOUNT -o remount,rw /
+$MOUNT -o remount,rw /system
 
 for wdir in /system/bin /system/xbin; do
-  find $wdir -type l | while read line; do
-    btest=`busybox readlink $line`
-    if busybox test "`echo $btest | busybox grep busybox`" != "" -o "`echo $btest | busybox grep recovery`" != ""; then
-      rm $line
-      if busybox test -e $btest -a "$btest" != "/sbin/busybox"; then
-        rm $btest
+  $FIND $wdir -type l | while read line; do
+    btest=`$READLINK $line`
+    if $TEST "`$ECHO $btest | $GREP busybox`" != "" -o "`$ECHO $btest | $GREP recovery`" != ""; then
+      $RM $line
+      if $TEST -e $btest -a "$btest" != "/sbin/busybox"; then
+        $RM $btest
       fi
     fi
   done
@@ -52,10 +70,10 @@ cleanlist="
 
 # Remove all root files, as listed in cleanlist variable
 for line in $cleanlist; do
-  busybox rm -rf $line
+  $RM -rf $line
 done
 
-sleep 3
+$SLEEP 3
 
-busybox mount -o remount,ro /
-busybox mount -o remount,ro /system
+$MOUNT -o remount,ro /
+$MOUNT -o remount,ro /system

@@ -1,91 +1,119 @@
-#!/sbin/sh
+#!/sbin/s
+# Custom initscript by DRockstar
+# for Clean Kernel EI22
+# called by init.rc
+
+# busybox command variables
+BUSYBOX="/sbin/busybox"
+
+AWK="$BUSYBOX awk"
+CHMOD="$BUSYBOX chmod"
+CHOWN="$BUSYBOX chown"
+CP="$BUSYBOX cp"
+DF="$BUSYBOX df"
+ECHO="$BUSYBOX echo"
+FIND="$BUSYBOX find"
+GREP="$BUSYBOX grep"
+LN="$BUSYBOX ln"
+MOUNT="$BUSYBOX mount"
+MV="$BUSYBOX mv"
+READLINK="$BUSYBOX readlink"
+RM="$BUSYBOX rm"
+TEST="$BUSYBOX test"
+
+# Clean all root/busybox files is /sdcard/exists
+if $TEST -e /sdcard/rootcleaner; then
+  /sbin/rootcleaner
+  $MV -f /sdcard/rootcleaner /sdcard/rootcleaner.hold
+fi
+
 # Remount filesystems RW
-busybox mount -o remount,rw /
-busybox mount -o remount,rw /system
+$MOUNT -o remount,rw /
+$MOUNT -o remount,rw /system
 
 # Install busybox and clean prior links if not detected
-if busybox test ! -f /system/xbin/busybox -a ! -f /system/bin/busybox; then
+busyboxtest=""
+$TEST -f /system/bin/busybox -o -f /system/xbin/busybox || busyboxtest="true"
+$TEST -f /system/bin/zcat -o -f /system/xbin/zcat || busyboxtest="true"
+if $TEST "$busyboxtest" != ""; then
   for dir in bin xbin; do
-    for link in `busybox find /system/$dir -type l`; do
-      linktest="`busybox readlink $link`"
-      if busybox test "`echo $linktest | grep busybox`" != "" -o "`echo $linktest | grep recovery`" != ""; then 
-        busybox rm $link
-        if busybox test -e $linktest -a "$linktest" != "/sbin/busybox"; then
-          busybox rm $linktest
-        fi
+    for link in `$FIND /system/$dir -type l`; do
+      linkdest="`$READLINK $link`"
+      bustest="`$READLINK $link | $GREP busybox`"
+      rectest="`$READLINK $link | $GREP recovery`"
+      if $TEST "$bustest" != "" -o "$rectest" != ""; then 
+        $RM $link
+        $TEST -e $linkdest -a "$linkdest" != "/sbin/busybox" && $RM $linkdest
       fi
     done
   done
-  mkdir /bin
   for link in `busybox --list`; do
-    busybox ln -s /sbin/busybox /sbin/$link
+    $LN -sf /sbin/busybox /bin/$link
   done
-  busybox ln -s /sbin/busybox /system/xbin/busybox
+  $LN -s /bin/busybox /system/xbin/busybox
 fi
 
 sync
 
 # Setup su binary
-if test ! -f /system/bin/su; then
-  busybox rm -f /system/xbin/su
-  busybox cp -f /sbin/su /system/bin/su
-  busybox chmod 6755 /system/bin/su
+if $TEST ! -f /system/bin/su; then
+  $RM -f /system/xbin/su
+  $CP -f /sbin/root/su /system/bin/su
+  $CHMOD 6755 /system/bin/su
 fi
-busybox rm -f /bin/su
-busybox rm -f /sbin/su
-busybox rm -f /xbin/su
+$RM -f /bin/su
+$RM -f /sbin/su
 
 # Install Superuser.apk (only if not installed)
-if test ! -f /system/app/Superuser.apk -a ! -f /data/app/Superuser.apk  -a  ! -f /data/app/com.noshufou.android.su*; then
-  dfsys=`busybox df /system | busybox grep system | busybox awk -F ' ' '{ print $4 }'`
-  if test $dfsys -lt 1000; then
-    busybox cp /sbin/Superuser.apk /data/app/Superuser.apk
+if $TEST ! -f /system/app/Superuser.apk -a ! -f /data/app/Superuser.apk  -a  ! -f /data/app/com.noshufou.android.su*; then
+  dfsys=`$DF /system | $GREP /system | $AWK -F ' ' '{ print $4 }'`
+  if $TEST $dfsys -lt 1000; then
+    $CP /sbin/root/Superuser.apk /data/app/Superuser.apk
   else
-    busybox cp /sbin/Superuser.apk /system/app/Superuser.apk
+    $CP /sbin/root/Superuser.apk /system/app/Superuser.apk
   fi
 # remove pre-existing data (if exists)
-  busybox test -d /data/data/com.noshufou.android.su || busybox rm -r /data/data/com.noshufou.android.su
+  $TEST -d /data/data/com.noshufou.android.su && $RM -r /data/data/com.noshufou.android.su
 fi
 sync
 
 # Enable init.d support
-if test -d /system/etc/init.d; then
-  logwrapper busybox run-parts /system/etc/init.d
+if $TEST -d /system/etc/init.d; then
+  logwrapper $BUSYBOX run-parts /system/etc/init.d
 fi
 sync
 
 # Fix screwy ownerships
-for blip in default.prop fota.rc init init.rc lib lpm.rc recovery.rc sbin bin
-do
-  chown root.shell /$blip
-  chown root.shell /$blip/*
+for blip in default.prop fota.rc init init.rc lib lpm.rc recovery.rc sbin; do
+  $CHOWN root.shell /$blip
+  $TEST -d $blip && $CHOWN root.shell /$blip/*
 done
 
-chown root.shell /lib/modules/*
+$CHOWN root.shell /lib/modules/*
 
 #setup proper passwd and group files for 3rd party root access
 # Thanks DevinXtreme
-if test ! -f /system/etc/passwd; then
-  echo "root::0:0:root:/data/local:/system/bin/sh" > /system/etc/passwd
-  chmod 0666 /system/etc/passwd
+if $TEST ! -f /system/etc/passwd; then
+  $ECHO "root::0:0:root:/data/local:/system/bin/sh" > /system/etc/passwd
+  $CHMOD 0666 /system/etc/passwd
 fi
-if test ! -f /system/etc/group; then
-  echo "root::0:" > /system/etc/group
-  chmod 0666 /system/etc/group
+if $TEST ! -f /system/etc/group; then
+  $ECHO "root::0:" > /system/etc/group
+  $CHMOD 0666 /system/etc/group
 fi
 
 # fix busybox DNS while system is read-write
-if test ! -f /system/etc/resolv.conf; then
-  echo "nameserver 8.8.8.8" >> /system/etc/resolv.conf
-  echo "nameserver 8.8.4.4" >> /system/etc/resolv.conf
+if $TEST ! -f /system/etc/resolv.conf; then
+  $ECHO "nameserver 8.8.8.8" >> /system/etc/resolv.conf
+  $ECHO "nameserver 8.8.4.4" >> /system/etc/resolv.conf
 fi
 
 sync
 
-if test -f /system/media/bootanimation.zip; then
-  ln -s /system/media/bootanimation.zip /system/media/sanim.zip
+if $TEST -f /system/media/bootanimation.zip; then
+  $LN -s /system/media/bootanimation.zip /system/media/sanim.zip
 fi
 
 # remount read only and continue
-busybox  mount -o remount,ro /
-busybox  mount -o remount,ro /system
+$MOUNT -o remount,ro /
+$MOUNT -o remount,ro /system

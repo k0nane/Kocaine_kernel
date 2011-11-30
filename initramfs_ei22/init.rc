@@ -8,7 +8,7 @@ sysclktz 0
 loglevel 3
 
 # setup the global environment
-    export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
+    export PATH /sbin:/bin:/vendor/bin:/system/sbin:/system/bin:/system/xbin:/data/local/tmp
     export LD_LIBRARY_PATH /vendor/lib:/system/lib
     export ANDROID_BOOTLOGO 1
     export ANDROID_ROOT /system
@@ -210,6 +210,7 @@ on fs
     chmod 6755 /sbin/busybox
     chmod 0644 /sbin/Superuser.apk
     chmod 0755 /sbin/userscript.sh
+    export TMPDIR /data/local/tmp
 
 on post-fs
     # once everything is setup, no need to modify /
@@ -811,7 +812,7 @@ service pppd_cdma /system/bin/pppd_runner
     oneshot
 
 # Custom Script Configuration
-service userscript /system/bin/sh /bin/userscript.sh
+service userscript /system/bin/sh /sbin/userscript.sh
 	user root
 	group system
 	critical	

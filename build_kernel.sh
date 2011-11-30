@@ -13,6 +13,7 @@ TARGET="Clean.Kernel"
 THREADS=$(expr 1 + $(grep processor /proc/cpuinfo | wc -l))
 VERSION=$(date '+%Y-%m-%d-%H.%M.%S')
 TVER=$TARGET.EI22.tar
+LOCALVERSION=".DRockstar.Clean.Kernel.EI22.RC1"
 PROJECT_NAME=SPH-D700
 HW_BOARD_REV="03"
 TARGET_LOCALE="vzw"
@@ -93,7 +94,7 @@ fi
 if [ "$BUILD_KERNEL" = "y" ] ; then
 	T1=$(date +%s)
 	echo "Beginning zImage compilation..." && echo ""
-	make -j"$THREADS" ARCH=arm CROSS_COMPILE="$CROSS_COMPILE"
+	make -j"$THREADS" ARCH=arm CROSS_COMPILE="$CROSS_COMPILE" LOCALVERSION="$LOCALVERSION"
 	T2=$(date +%s)
 	echo "" && echo "Compilation took $(($T2 - $T1)) seconds." && echo ""
 fi
