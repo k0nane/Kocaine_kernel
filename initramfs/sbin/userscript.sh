@@ -47,11 +47,13 @@ if $TEST "$busyboxtest" != ""; then
       fi
     done
   done
-  for link in `busybox --list`; do
-    $LN -sf /sbin/busybox /bin/$link
-  done
-  $LN -s /bin/busybox /system/xbin/busybox
+  busybox --install -s /system/xbin
+  $LN -s /sbin/busybox /system/xbin/busybox
 fi
+
+# Remap mv link to busybox
+$RM /system/bin/mv
+$LN -s /sbin/busybox /system/bin/mv
 
 sync
 
