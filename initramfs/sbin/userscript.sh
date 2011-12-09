@@ -47,7 +47,7 @@ if $TEST "$busyboxtest" != ""; then
       fi
     done
   done
-  /sbin/busybox --install -s /system/xbin
+  $LN -sf /sbin/busybox /system/xbin/$link
   $LN -s /sbin/busybox /system/xbin/busybox
 fi
 
@@ -119,3 +119,6 @@ fi
 # remount read only and continue
 $MOUNT -o remount,ro /
 $MOUNT -o remount,ro /system
+
+# Better keyboard delay via theimpaler747 via tanimn
+echo "5" > /sys/devices/platform/s3c-keypad/timer_delay
