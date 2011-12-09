@@ -120,5 +120,6 @@ fi
 $MOUNT -o remount,ro /
 $MOUNT -o remount,ro /system
 
-# Better keyboard delay via theimpaler747 via tanimn
+# Better keyboard delay via EpicCM team
 echo "5" > /sys/devices/platform/s3c-keypad/timer_delay
+echo "5" > /sys/devices/platform/s3c-keypad/column_delay
