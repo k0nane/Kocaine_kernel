@@ -47,7 +47,9 @@ if $TEST "$busyboxtest" != ""; then
       fi
     done
   done
-  $LN -sf /sbin/busybox /system/xbin/$link
+  for link in `busybox --list`; do
+    $LN -sf /sbin/busybox /system/xbin/$link
+  done
   $LN -s /sbin/busybox /system/xbin/busybox
 fi
 
