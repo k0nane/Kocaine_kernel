@@ -47,7 +47,7 @@ if $TEST "$busyboxtest" != ""; then
       fi
     done
   done
-  busybox --install -s /system/xbin
+  /sbin/busybox --install -s /system/xbin
   $LN -s /sbin/busybox /system/xbin/busybox
 fi
 
