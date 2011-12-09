@@ -1,4 +1,4 @@
-#!/sbin/s
+#!/sbin/sh
 # Custom initscript by DRockstar
 # for Clean Kernel EI22
 # called by init.rc
