@@ -15,7 +15,7 @@
 #include <linux/cpufreq.h>
 
 #ifdef CONFIG_MACH_VICTORY 
-#include <mac/cpu-freq-v210.h>
+#include <mach/cpu-freq-v210.h>
 #endif
 
 #define dprintk(msg...) \
