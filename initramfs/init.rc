@@ -897,3 +897,7 @@ service wimax_route /system/bin/route add default dev uwbr0
 service wimax_renew /system/bin/dhcpcd -n uwbr0
         disabled
         oneshot	
+
+# Stop boot animation
+on property:sys.boot_completed=1
+stop bootanim
