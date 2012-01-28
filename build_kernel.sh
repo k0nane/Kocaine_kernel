@@ -11,7 +11,7 @@ DEFCONFIG=kocaine_defconfig
 CROSS_COMPILE=/opt/toolchains/arm-2009q3/bin/arm-none-linux-gnueabi-
 THREADS=4
 GENERATE_ZIP=y
-LOCALVERSION="-kocaine-1.0"
+LOCALVERSION="-kocaine-2.0"
 BUILD_SUFFIX=`date +%Y%m%d%H%M`
 
 prepare_kernel()
