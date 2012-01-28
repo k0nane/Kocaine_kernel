@@ -3298,8 +3298,7 @@ static void __init victory_fixup(struct machine_desc *desc,
        	ram_console_start = mi->bank[1].start + mi->bank[1].size;
 	ram_console_size = SZ_1M - SZ_4K;
 #endif
-	/* Leave 1K at 0x57fff000 for kexec hardboot page. */
-	pm_debug_scratchpad = ram_console_start + ram_console_size + SZ_1K;
+	pm_debug_scratchpad = ram_console_start + ram_console_size;
 }
 
 /* this function are used to detect s5pc110 chip version temporally */
@@ -3567,9 +3566,9 @@ void otg_phy_init(void)
 	writel(readl(S3C_USBOTG_PHYTUNE) | (0x1<<20),
 			S3C_USBOTG_PHYTUNE);
 
-	/* set DC level as 6 (6%) */
-	writel((readl(S3C_USBOTG_PHYTUNE) & ~(0xf)) | (0x1<<2) | (0x1<<1),
-			S3C_USBOTG_PHYTUNE);
+	/* set DC level as 1011 (16%) */
+	writel((readl(S3C_USBOTG_PHYTUNE) & ~(0xf)) | 0xb, S3C_USBOTG_PHYTUNE);
+
 }
 EXPORT_SYMBOL(otg_phy_init);
 
